@@ -20,7 +20,13 @@ table{border-collapse:collapse;width:100%;font-size:14px} td,th{border:1px solid
 <span class="kpi"><b>2026-06-30</b> corte</span>
 </p>
 
-<h2>Endpoints</h2>
+<div style="background:#eef5fb;border:1px solid #cfe0ef;border-radius:8px;padding:12px 14px;margin:14px 0">
+🔎 <b>¿Necesitas filtrar?</b> Hay una <b>API de consultas</b> (filtra por ciudad, daño, área, fecha, con‑foto):
+<a href="https://reportes-terremoto.rommeljose.workers.dev"><b>reportes-terremoto.rommeljose.workers.dev</b></a>
+<div class="muted" style="margin-top:4px">Ej.: <code>/reportes?damage=total&amp;city=Caracas</code> · <code>/reportes?has_photo=true&amp;format=csv</code></div>
+</div>
+
+<h2>Endpoints (archivos estáticos)</h2>
 <table>
 <tr><th>Recurso</th><th>Descripción</th></tr>
 <tr><td><code>reportes.geojson</code></td><td>FeatureCollection (QGIS, Google My Maps, Leaflet)</td></tr>
