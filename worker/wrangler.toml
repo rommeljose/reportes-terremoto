@@ -1,0 +1,6 @@
+name = "reportes-terremoto"
+main = "worker.js"
+compatibility_date = "2025-06-01"
+
+# Despliega en: https://reportes-terremoto.<tu-subdominio>.workers.dev
+# No usa KV, D1 ni secretos: lee el GeoJSON público de la Capa 1 y lo cachea en el edge.
