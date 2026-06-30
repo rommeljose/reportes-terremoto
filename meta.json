@@ -1,0 +1,39 @@
+{
+  "dataset": "Reportes ciudadanos de daño — Doblete de Yumare 2026",
+  "fuente_origen": "terremotovenezuela.com",
+  "nota": "Copia de preservación humanitaria; la fuente original purgó su base de datos.",
+  "schema_version": "1.0",
+  "fecha_corte": "2026-06-30",
+  "redactado": false,
+  "total_reportes": 733,
+  "con_foto": 727,
+  "por_dano": {
+    "parcial": 277,
+    "total": 203,
+    "severo": 253
+  },
+  "top_ciudades": {
+    "Caracas": 370,
+    "Caraballeda": 107,
+    "Maiquetía": 38,
+    "Catia La Mar": 24,
+    "Maracay": 21,
+    "La Guaira": 18,
+    "Valencia": 17,
+    "Macuto": 16,
+    "Guatire": 12,
+    "Guarenas": 11,
+    "Naguanagua": 8,
+    "Tucacas": 7,
+    "Los Teques": 6,
+    "Naiguatá": 4,
+    "Vargas": 4
+  },
+  "fotos_base": "https://rommeljose.github.io/Sismo_fotos/",
+  "endpoints": [
+    "reportes.geojson",
+    "reportes.json",
+    "reportes.csv",
+    "meta.json"
+  ]
+}
