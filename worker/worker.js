@@ -35,10 +35,12 @@ export default {
 
     try {
       if (url.pathname === "/" || url.pathname === "") return docs();
+      if (url.pathname === "/docs" || url.pathname === "/docs/") return swaggerUI();
+      if (url.pathname === "/openapi.json") return json(openapiSpec(url.origin), 200, "application/json");
       if (url.pathname === "/meta") return passthrough(META, "application/json");
       if (url.pathname === "/reportes" || url.pathname === "/reportes.geojson")
         return await reportes(url);
-      return json({ error: "ruta no encontrada", rutas: ["/reportes", "/meta", "/"] }, 404);
+      return json({ error: "ruta no encontrada", rutas: ["/reportes", "/meta", "/docs", "/openapi.json", "/"] }, 404);
     } catch (e) {
       return json({ error: "fallo interno", detalle: String(e) }, 500);
     }
@@ -150,6 +152,138 @@ async function passthrough(srcUrl, ctype) {
   return new Response(r.body, { status: r.status, headers: { "content-type": ctype, ...CORS } });
 }
 
+// --- Swagger UI (documentación interactiva, "Try it out") ---
+function swaggerUI() {
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>API de Reportes — Swagger UI</title>
+<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+</head><body>
+<div id="swagger"></div>
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script>
+window.ui = SwaggerUIBundle({
+  url: "/openapi.json",
+  dom_id: "#swagger",
+  deepLinking: true,
+  tryItOutEnabled: true
+});
+</script>
+</body></html>`;
+  return new Response(html, { status: 200, headers: { "content-type": "text/html; charset=utf-8", ...CORS } });
+}
+
+// --- Especificación OpenAPI 3.0 (contrato de la API) ---
+function openapiSpec(origin) {
+  const enumDamage = ["parcial", "severo", "total"];
+  return {
+    openapi: "3.0.3",
+    info: {
+      title: "API de Reportes ciudadanos — Doblete de Yumare 2026",
+      version: "1.0.0",
+      description:
+        "Copia de preservación humanitaria de los reportes de daño de terremotovenezuela.com " +
+        "(su base fue purgada). Acceso abierto, CORS habilitado. Las fotos se sirven como URL " +
+        "absoluta desde https://rommeljose.github.io/Sismo_fotos/.",
+      contact: { name: "terremotovenezuela.com (origen de los reportes)" },
+      license: { name: "Datos de acceso abierto · atribución a terremotovenezuela.com" },
+    },
+    servers: [{ url: origin || "https://reportes-terremoto.rommeljose.workers.dev" }],
+    paths: {
+      "/reportes": {
+        get: {
+          summary: "Consultar reportes con filtros",
+          description: "Devuelve reportes filtrados en GeoJSON (def.), JSON o CSV.",
+          parameters: [
+            { name: "format", in: "query", description: "Formato de salida",
+              schema: { type: "string", enum: ["geojson", "json", "csv"], default: "geojson" } },
+            { name: "city", in: "query", description: "Ciudad (insensible a mayúsculas/tildes, coincidencia parcial)",
+              schema: { type: "string" }, example: "Caracas" },
+            { name: "damage", in: "query", description: "Nivel(es) de daño, separados por coma",
+              schema: { type: "string" }, example: "total,severo" },
+            { name: "has_photo", in: "query", description: "Solo reportes con foto",
+              schema: { type: "boolean" }, example: true },
+            { name: "since", in: "query", description: "Actualizados desde esta fecha (last_updated_at)",
+              schema: { type: "string", format: "date" }, example: "2026-06-28" },
+            { name: "bbox", in: "query", description: "Recorte rectangular minLon,minLat,maxLon,maxLat",
+              schema: { type: "string" }, example: "-67.1,10.5,-66.7,10.7" },
+            { name: "id", in: "query", description: "UUID exacto de un reporte",
+              schema: { type: "string" } },
+            { name: "limit", in: "query", description: "Máx. resultados (0 = todos)",
+              schema: { type: "integer", default: 0 } },
+            { name: "offset", in: "query", description: "Desplazamiento (paginación)",
+              schema: { type: "integer", default: 0 } },
+          ],
+          responses: {
+            "200": {
+              description: "Reportes que cumplen el filtro",
+              content: {
+                "application/geo+json": { schema: { $ref: "#/components/schemas/FeatureCollection" } },
+                "application/json": { schema: { type: "array", items: { $ref: "#/components/schemas/Reporte" } } },
+                "text/csv": { schema: { type: "string" } },
+              },
+            },
+          },
+        },
+      },
+      "/meta": {
+        get: {
+          summary: "Conteos y metadatos del dataset",
+          responses: { "200": { description: "Conteos por daño, ciudad, fecha de corte, esquema" } },
+        },
+      },
+    },
+    components: {
+      schemas: {
+        Reporte: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            name: { type: "string" },
+            address: { type: "string" },
+            city: { type: "string" },
+            zone: { type: "string" },
+            damage_level: { type: "string", enum: enumDamage },
+            status: { type: "string", enum: ["en_revision", "verificado"] },
+            general_source: { type: "string" },
+            notes: { type: "string" },
+            trapped_names: { type: "string" },
+            has_missing_persons: { type: "boolean" },
+            created_at: { type: "string" },
+            last_updated_at: { type: "string" },
+            n_fotos: { type: "integer" },
+            main_photo_url: { type: "string", format: "uri" },
+            media_urls: { type: "array", items: { type: "string", format: "uri" } },
+          },
+        },
+        Feature: {
+          type: "object",
+          properties: {
+            type: { type: "string", example: "Feature" },
+            geometry: {
+              type: "object",
+              properties: {
+                type: { type: "string", example: "Point" },
+                coordinates: { type: "array", items: { type: "number" }, example: [-66.9, 10.5] },
+              },
+            },
+            properties: { $ref: "#/components/schemas/Reporte" },
+          },
+        },
+        FeatureCollection: {
+          type: "object",
+          properties: {
+            type: { type: "string", example: "FeatureCollection" },
+            matched: { type: "integer", description: "Total que cumple el filtro" },
+            returned: { type: "integer", description: "Devueltos tras limit/offset" },
+            features: { type: "array", items: { $ref: "#/components/schemas/Feature" } },
+          },
+        },
+      },
+    },
+  };
+}
+
 function docs() {
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>API Reportes · consultas</title>
@@ -159,6 +293,8 @@ table{border-collapse:collapse;width:100%;font-size:14px}td,th{border:1px solid 
 <h1>API de Reportes — consultas (Capa 2)</h1>
 <p>Copia de preservación humanitaria de <b>terremotovenezuela.com</b>. CORS abierto. Datos: Capa 1 en
 <a href="https://rommeljose.github.io/reportes-terremoto/">GitHub Pages</a>.</p>
+<p>👉 <b><a href="/docs">Documentación interactiva (Swagger UI · "Try it out")</a></b>
+&nbsp;·&nbsp; <a href="/openapi.json">openapi.json</a></p>
 <h2>GET /reportes</h2>
 <table>
 <tr><th>Parámetro</th><th>Ejemplo</th></tr>

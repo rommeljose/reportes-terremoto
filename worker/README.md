@@ -30,7 +30,10 @@ No requiere KV, D1, secretos ni variables: solo lee la Capa 1.
 | `id` | `?id=<uuid>` | un reporte exacto |
 | `limit` / `offset` | `?limit=50&offset=0` | paginación |
 
-Otras rutas: `/` (documentación) · `/meta` (conteos del dataset).
+Otras rutas:
+- `/docs` — **documentación interactiva (Swagger UI, "Try it out")**
+- `/openapi.json` — contrato OpenAPI 3.0 (importable en Postman/Insomnia, genera clientes)
+- `/` — documentación breve · `/meta` — conteos del dataset
 
 ### Ejemplos
 ```
